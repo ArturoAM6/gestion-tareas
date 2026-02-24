@@ -54,6 +54,12 @@ const rememberMe = ref(false)
 const handleLogin = () => {
   // Lógica de inicio de sesión
   console.log('Login attempt:', email.value, password.value, rememberMe.value)
+  if (email.value === 'admin@example.com' && password.value === 'password') {
+    window.location.href = '/tareas'
+  } else {
+    console.log('Login failed')
+    alert('Login failed')
+  }
 }
 
 const loginWithGoogle = () => {
