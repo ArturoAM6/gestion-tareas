@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const pool = require('./db');
+const pool = require('./config/db');
 
 dotenv.config();
 

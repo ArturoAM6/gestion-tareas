@@ -1,0 +1,55 @@
+services:
+  db:
+    image: mariadb:11.4
+    container_name: gestion_tareas_db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "3308:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./base_de_datos.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: gestion_tareas_server
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      HOST: db
+      DB_PORT: 3306
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nuxt:
+    build:
+      context: .
+      dockerfile: Dockerfile.nuxt
+    container_name: gestion_tareas_nuxt
+    restart: always
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./app:/app/app
+      - ./public:/app/public
+      - ./nuxt.config.ts:/app/nuxt.config.ts
+    depends_on:
+      - server
+
+volumes:
+  db_data:
