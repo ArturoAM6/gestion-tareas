@@ -6,6 +6,10 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+
+ARG API_URL=http://localhost:3000
+ENV API_URL=$API_URL
+
 RUN npx nuxt build
 
 EXPOSE 3000

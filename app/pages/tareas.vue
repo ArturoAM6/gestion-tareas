@@ -44,7 +44,8 @@
 </template>
 
 <script setup>
-const API_URL = 'http://localhost:3000'
+const config = useRuntimeConfig()
+const API_URL = config.public.apiUrl
 
 const getToken = () => localStorage.getItem('token')
 

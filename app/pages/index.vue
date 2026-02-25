@@ -77,7 +77,8 @@ const errorMsg = ref('')
 const handleLogin = async () => {
   errorMsg.value = ''
   try {
-    const response = await fetch('http://localhost:3000/login', {
+    const config = useRuntimeConfig()
+    const response = await fetch(`${config.public.apiUrl}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

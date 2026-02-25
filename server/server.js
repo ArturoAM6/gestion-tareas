@@ -11,8 +11,8 @@ const app = express();
 
 
 // CONSTANTES
-const PORT = 3000;
-const JWT_SECRET = "SECRETO_SUPER_SEGURO";
+const PORT = process.env.SERVER_PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || "SECRETO_SUPER_SEGURO";
 const SALT_ROUNDS = 10;
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_PASSWORD_LENGTH = 10;
@@ -26,16 +26,19 @@ app.use(express.json());
 // SEED: Crear usuario admin si no existe
 const seedAdmin = async () => {
     try {
+        const adminUser = process.env.ADMIN_USER || 'admin';
+        const adminPass = process.env.ADMIN_PASSWORD || 'Admin123.';
+
         const [rows] = await pool.query(
             "SELECT * FROM usuarios WHERE usuario = ?",
-            ['admin']
+            [adminUser]
         );
 
         if (rows.length === 0) {
-            const hashed = await bcrypt.hash('Admin123.', SALT_ROUNDS);
+            const hashed = await bcrypt.hash(adminPass, SALT_ROUNDS);
             await pool.query(
                 "INSERT INTO usuarios (usuario, contra) VALUES (?, ?)",
-                ['admin', hashed]
+                [adminUser, hashed]
             );
             console.log('USUARIO_ADMIN_CREADO');
         } else {
