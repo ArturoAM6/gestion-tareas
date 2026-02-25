@@ -61,9 +61,10 @@ const prioridadTexto = computed(() => {
 
 const fechaFormateada = computed(() => {
   if (!props.tarea.fecha_limite) return ''
-  const partes = props.tarea.fecha_limite.split('-')
+  const dateStr = props.tarea.fecha_limite.substring(0, 10)
+  const partes = dateStr.split('-')
   const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-  return `${parseInt(partes[2])} ${meses[parseInt(partes[1]) - 1]}`
+  return `${parseInt(partes[2])} ${meses[parseInt(partes[1]) - 1]} ${partes[0]}`
 })
 
 const accentClass = computed(() => {

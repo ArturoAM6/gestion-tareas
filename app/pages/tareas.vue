@@ -7,6 +7,7 @@
         :nombre-usuario="nombreUsuario"
         :conteos="conteos"
         @nueva="abrirNueva"
+        @cerrar-sesion="cerrarSesion"
       />
 
       <!-- Filtros -->
@@ -43,7 +44,21 @@
 </template>
 
 <script setup>
-const nombreUsuario = 'José García'
+const API_URL = 'http://localhost:3000'
+
+const getToken = () => localStorage.getItem('token')
+
+// Extraer nombre de usuario del JWT
+const parseToken = () => {
+  try {
+    const token = getToken()
+    if (!token) return null
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.usuario
+  } catch { return null }
+}
+
+const nombreUsuario = parseToken() || 'Usuario'
 
 // Estado reactivo
 const busqueda = ref('')
@@ -51,6 +66,7 @@ const filtroEstado = ref(0)
 const filtroPrioridad = ref(0)
 const modalVisible = ref(false)
 const tareaEditando = ref(null)
+const tareas = ref([])
 
 // Columnas del Kanban
 const columnas = [
@@ -59,64 +75,29 @@ const columnas = [
   { estado: 3, titulo: 'Completada' }
 ]
 
-// Datos de prueba
-let nextId = 7
-const tareas = ref([
-  {
-    id_tarea: 1,
-    titulo: 'Conectar frontend con la API REST',
-    descripcion: 'Integrar endpoints de tareas usando useFetch de Nuxt.',
-    prioridad: 2,
-    estado: 1,
-    fecha_limite: '2026-03-10',
-    usuario_id: 1
-  },
-  {
-    id_tarea: 2,
-    titulo: 'Pruebas e2e con Cypress',
-    descripcion: 'Cubrir flujos de creación, edición y eliminación de tareas.',
-    prioridad: 1,
-    estado: 1,
-    fecha_limite: '2026-03-15',
-    usuario_id: 1
-  },
-  {
-    id_tarea: 3,
-    titulo: 'Implementar autenticación JWT',
-    descripcion: 'Login, registro y refresh tokens con middleware de protección de rutas.',
-    prioridad: 3,
-    estado: 2,
-    fecha_limite: '2026-03-05',
-    usuario_id: 1
-  },
-  {
-    id_tarea: 4,
-    titulo: 'Crear componentes de UI para tareas',
-    descripcion: 'Cards, toolbar, modal de creación/edición y filtros.',
-    prioridad: 2,
-    estado: 2,
-    fecha_limite: '2026-03-08',
-    usuario_id: 1
-  },
-  {
-    id_tarea: 5,
-    titulo: 'Diseñar la base de datos de usuarios',
-    descripcion: 'Definir esquemas para MySQL con validaciones y relaciones necesarias.',
-    prioridad: 3,
-    estado: 3,
-    fecha_limite: '2026-02-28',
-    usuario_id: 1
-  },
-  {
-    id_tarea: 6,
-    titulo: 'Configurar el entorno de desarrollo',
-    descripcion: 'Instalar dependencias, configurar ESLint y Prettier para el proyecto.',
-    prioridad: 1,
-    estado: 3,
-    fecha_limite: '2026-02-20',
-    usuario_id: 1
+// Cargar tareas desde la API
+const cargarTareas = async () => {
+  try {
+    const res = await fetch(`${API_URL}/tareas`, {
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    })
+    if (res.ok) {
+      tareas.value = await res.json()
+    } else if (res.status === 401) {
+      window.location.href = '/'
+    }
+  } catch (error) {
+    console.error('Error al cargar tareas:', error)
   }
-])
+}
+
+onMounted(() => {
+  if (!getToken()) {
+    window.location.href = '/'
+    return
+  }
+  cargarTareas()
+})
 
 // Conteos por estado
 const conteos = computed(() => ({
@@ -149,7 +130,6 @@ const abrirNueva = () => {
 
 const abrirNuevaConEstado = (estado) => {
   tareaEditando.value = null
-  // Se abrirá el modal con el estado pre-seleccionado
   modalVisible.value = true
 }
 
@@ -163,26 +143,51 @@ const cerrarModal = () => {
   tareaEditando.value = null
 }
 
-const guardarTarea = (datos) => {
-  if (datos.id_tarea) {
-    // Editar
-    const idx = tareas.value.findIndex(t => t.id_tarea === datos.id_tarea)
-    if (idx !== -1) {
-      tareas.value[idx] = { ...datos }
+const guardarTarea = async (datos) => {
+  try {
+    if (datos.id_tarea) {
+      // Editar
+      await fetch(`${API_URL}/tareas/${datos.id_tarea}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(datos)
+      })
+    } else {
+      // Crear
+      await fetch(`${API_URL}/tareas`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(datos)
+      })
     }
-  } else {
-    // Crear
-    tareas.value.push({
-      ...datos,
-      id_tarea: nextId++,
-      usuario_id: 1
-    })
+    await cargarTareas()
+    cerrarModal()
+  } catch (error) {
+    console.error('Error al guardar tarea:', error)
   }
-  cerrarModal()
 }
 
-const eliminarTarea = (tarea) => {
-  tareas.value = tareas.value.filter(t => t.id_tarea !== tarea.id_tarea)
-  cerrarModal()
+const eliminarTarea = async (tarea) => {
+  try {
+    await fetch(`${API_URL}/tareas/${tarea.id_tarea}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    })
+    await cargarTareas()
+    cerrarModal()
+  } catch (error) {
+    console.error('Error al eliminar tarea:', error)
+  }
+}
+
+const cerrarSesion = () => {
+  localStorage.removeItem('token')
+  window.location.href = '/'
 }
 </script>

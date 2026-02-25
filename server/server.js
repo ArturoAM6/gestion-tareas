@@ -23,6 +23,30 @@ app.use(cors());
 app.use(express.json());
 
 
+// SEED: Crear usuario admin si no existe
+const seedAdmin = async () => {
+    try {
+        const [rows] = await pool.query(
+            "SELECT * FROM usuarios WHERE usuario = ?",
+            ['admin']
+        );
+
+        if (rows.length === 0) {
+            const hashed = await bcrypt.hash('Admin123.', SALT_ROUNDS);
+            await pool.query(
+                "INSERT INTO usuarios (usuario, contra) VALUES (?, ?)",
+                ['admin', hashed]
+            );
+            console.log('USUARIO_ADMIN_CREADO');
+        } else {
+            console.log('USUARIO_ADMIN_YA_EXISTE');
+        }
+    } catch (error) {
+        console.error('ERROR_SEED_ADMIN:', error.message);
+    }
+};
+
+
 // REGISTRO
 app.post('/register', async (req, res) => {
     try {
@@ -58,7 +82,7 @@ app.post('/register', async (req, res) => {
         );
 
         await pool.query(
-            "INSERT INTO usuarios (usuario, contrasenas) VALUES (?, ?)",
+            "INSERT INTO usuarios (usuario, contra) VALUES (?, ?)",
             [usuario, hashed_password]
         );
 
@@ -76,6 +100,10 @@ app.post('/login', async (req, res) => {
     try {
         const { usuario, contrasena } = req.body;
 
+        if (!usuario || !contrasena) {
+            return res.status(400).json({ message: "FALTAN_DATOS" });
+        }
+
         const [rows] = await pool.query(
             "SELECT * FROM usuarios WHERE usuario = ?",
             [usuario]
@@ -91,7 +119,7 @@ app.post('/login', async (req, res) => {
 
         const password_valida = await bcrypt.compare(
             contrasena,
-            user_data.contrasenas
+            user_data.contra
         );
 
         if (!password_valida) {
@@ -101,7 +129,7 @@ app.post('/login', async (req, res) => {
         }
 
         const token = jwt.sign(
-            { usuario: user_data.usuario },
+            { id: user_data.id, usuario: user_data.usuario },
             JWT_SECRET,
             { expiresIn: '1h' }
         );
@@ -142,6 +170,97 @@ const validarToken = (req, res, next) => {
 };
 
 
+// ==================== TAREAS CRUD ====================
+
+// OBTENER TAREAS DEL USUARIO
+app.get('/tareas', validarToken, async (req, res) => {
+    try {
+        const [rows] = await pool.query(
+            "SELECT * FROM tareas WHERE usuario_id = (SELECT id FROM usuarios WHERE usuario = ?)",
+            [req.usuario]
+        );
+        res.json(rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "ERROR_SERVIDOR" });
+    }
+});
+
+// CREAR TAREA
+app.post('/tareas', validarToken, async (req, res) => {
+    try {
+        const { titulo, descripcion, prioridad, estado, fecha_limite } = req.body;
+
+        if (!titulo || !prioridad || !estado || !fecha_limite) {
+            return res.status(400).json({ message: "FALTAN_DATOS" });
+        }
+
+        const [userRows] = await pool.query(
+            "SELECT id FROM usuarios WHERE usuario = ?",
+            [req.usuario]
+        );
+
+        const usuario_id = userRows[0].id;
+
+        const [result] = await pool.query(
+            "INSERT INTO tareas (titulo, descripcion, prioridad, estado, fecha_limite, usuario_id) VALUES (?, ?, ?, ?, ?, ?)",
+            [titulo, descripcion || null, prioridad, estado, fecha_limite, usuario_id]
+        );
+
+        res.json({
+            message: "TAREA_CREADA",
+            id_tarea: result.insertId
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "ERROR_SERVIDOR" });
+    }
+});
+
+// ACTUALIZAR TAREA
+app.put('/tareas/:id', validarToken, async (req, res) => {
+    try {
+        const { titulo, descripcion, prioridad, estado, fecha_limite } = req.body;
+        const { id } = req.params;
+
+        const [result] = await pool.query(
+            "UPDATE tareas SET titulo = ?, descripcion = ?, prioridad = ?, estado = ?, fecha_limite = ? WHERE id_tarea = ? AND usuario_id = (SELECT id FROM usuarios WHERE usuario = ?)",
+            [titulo, descripcion || null, prioridad, estado, fecha_limite, id, req.usuario]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "TAREA_NO_ENCONTRADA" });
+        }
+
+        res.json({ message: "TAREA_ACTUALIZADA" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "ERROR_SERVIDOR" });
+    }
+});
+
+// ELIMINAR TAREA
+app.delete('/tareas/:id', validarToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const [result] = await pool.query(
+            "DELETE FROM tareas WHERE id_tarea = ? AND usuario_id = (SELECT id FROM usuarios WHERE usuario = ?)",
+            [id, req.usuario]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "TAREA_NO_ENCONTRADA" });
+        }
+
+        res.json({ message: "TAREA_ELIMINADA" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "ERROR_SERVIDOR" });
+    }
+});
+
+
 // PERFIL PROTEGIDO
 app.get('/perfil', validarToken, (req, res) => {
     res.json({
@@ -150,6 +269,7 @@ app.get('/perfil', validarToken, (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`SERVIDOR_CORRIENDO_EN_PUERTO_${PORT}`);
+    await seedAdmin();
 });

@@ -9,7 +9,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
-      - "3308:3306"
+      - "${DB_PORT_EXTERNAL}:${DB_PORT}"
     volumes:
       - db_data:/var/lib/mysql
       - ./base_de_datos.sql:/docker-entrypoint-initdb.d/init.sql
@@ -26,12 +26,12 @@ services:
     container_name: gestion_tareas_server
     restart: always
     ports:
-      - "3000:3000"
+      - "${SERVER_PORT}:${SERVER_PORT}"
     env_file:
       - .env
     environment:
-      HOST: db
-      DB_PORT: 3306
+      HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
     depends_on:
       db:
         condition: service_healthy
@@ -43,11 +43,9 @@ services:
     container_name: gestion_tareas_nuxt
     restart: always
     ports:
-      - "3001:3001"
-    volumes:
-      - ./app:/app/app
-      - ./public:/app/public
-      - ./nuxt.config.ts:/app/nuxt.config.ts
+      - "${NUXT_PORT}:${NUXT_PORT}"
+    environment:
+      NITRO_PORT: ${NUXT_PORT}
     depends_on:
       - server
 

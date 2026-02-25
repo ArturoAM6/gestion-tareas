@@ -5,8 +5,8 @@ use gestor;
 -- Tabla para almacenar los usuarios del sistema --
 create table usuarios (
     id int auto_increment primary key,
-    usuario varchar(50) not null,
-    contra varchar(12) not null
+    usuario varchar(50) not null unique,
+    contra varchar(255) not null
 );
 
 -- Tabla para almacenar las tareas de los usuarios --
@@ -20,6 +20,3 @@ create table tareas (
     usuario_id int not null,
     foreign key (usuario_id) references usuarios (id)
 );
-
-INSERT INTO usuarios (usuario, contra) VALUES ('admin', 'Admin123.');
--- Usuario de prueba para acceder al sistema --

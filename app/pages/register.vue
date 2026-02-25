@@ -6,19 +6,19 @@
       <div class="text-center">
         <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 shadow-lg shadow-purple-500/25">
           <svg class="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
           </svg>
         </div>
-        <h2 class="mt-5 text-2xl font-bold tracking-tight text-white">Iniciar sesión</h2>
+        <h2 class="mt-5 text-2xl font-bold tracking-tight text-white">Crear una cuenta</h2>
         <p class="mt-2 text-sm text-gray-500">
-          ¿No tienes cuenta?
-          <NuxtLink to="/register" class="font-semibold text-purple-400 hover:text-purple-300 transition-colors">Regístrate</NuxtLink>
+          ¿Ya tienes cuenta?
+          <NuxtLink to="/" class="font-semibold text-purple-400 hover:text-purple-300 transition-colors">Inicia sesión</NuxtLink>
         </p>
       </div>
 
       <!-- Formulario -->
       <div class="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl backdrop-blur-sm">
-        <form @submit.prevent="handleLogin" class="space-y-5">
+        <form @submit.prevent="handleRegister" class="space-y-5">
 
           <div>
             <label for="user" class="block text-sm font-medium text-gray-300">Usuario</label>
@@ -30,7 +30,7 @@
                 type="text"
                 autocomplete="username"
                 required
-                placeholder="Ingresa tu usuario"
+                placeholder="Elige un nombre de usuario"
                 class="block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none transition-all focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
               />
             </div>
@@ -44,21 +44,38 @@
                 v-model="password"
                 name="password"
                 type="password"
-                autocomplete="current-password"
+                autocomplete="new-password"
                 required
-                placeholder="Ingresa tu contraseña"
+                placeholder="Entre 8 y 10 caracteres"
+                class="block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none transition-all focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-300">Confirmar Contraseña</label>
+            <div class="mt-2">
+              <input
+                id="confirmPassword"
+                v-model="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                autocomplete="new-password"
+                required
+                placeholder="Repite tu contraseña"
                 class="block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none transition-all focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
               />
             </div>
           </div>
 
           <p v-if="errorMsg" class="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400 ring-1 ring-red-500/20">{{ errorMsg }}</p>
+          <p v-if="successMsg" class="rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400 ring-1 ring-emerald-500/20">{{ successMsg }}</p>
 
           <button
             type="submit"
             class="flex w-full justify-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-purple-500/25 transition-all duration-300 hover:from-purple-500 hover:to-indigo-500 hover:shadow-purple-500/40"
           >
-            Iniciar sesión
+            Registrarse
           </button>
         </form>
       </div>
@@ -72,12 +89,21 @@ import { ref } from 'vue'
 
 const user = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const errorMsg = ref('')
+const successMsg = ref('')
 
-const handleLogin = async () => {
+const handleRegister = async () => {
   errorMsg.value = ''
+  successMsg.value = ''
+
+  if (password.value !== confirmPassword.value) {
+    errorMsg.value = 'Las contraseñas no coinciden'
+    return
+  }
+
   try {
-    const response = await fetch('http://localhost:3000/login', {
+    const response = await fetch('http://localhost:3000/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -89,14 +115,18 @@ const handleLogin = async () => {
     const data = await response.json()
 
     if (response.ok) {
-      localStorage.setItem('token', data.token)
-      window.location.href = '/tareas'
+      successMsg.value = '¡Cuenta creada! Redirigiendo al login...'
+      setTimeout(() => {
+        window.location.href = '/'
+      }, 1500)
     } else {
-      errorMsg.value = data.message === 'USUARIO_NO_ENCONTRADO'
-        ? 'Usuario no encontrado'
-        : data.message === 'PASSWORD_INCORRECTA'
-        ? 'Contraseña incorrecta'
-        : 'Error al iniciar sesión'
+      errorMsg.value = data.message === 'USUARIO_YA_EXISTE'
+        ? 'Este usuario ya está registrado'
+        : data.message === 'PASSWORD_LONGITUD_INVALIDA'
+        ? 'La contraseña debe tener entre 8 y 10 caracteres'
+        : data.message === 'FALTAN_DATOS'
+        ? 'Completa todos los campos'
+        : 'Error al registrarse'
     }
   } catch (error) {
     console.error('Error de conexión:', error)

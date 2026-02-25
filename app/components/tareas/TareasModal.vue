@@ -146,7 +146,10 @@ const form = ref(formDefault())
 watch(() => props.visible, (val) => {
   if (val) {
     if (props.tarea) {
-      form.value = { ...props.tarea }
+      form.value = {
+        ...props.tarea,
+        fecha_limite: props.tarea.fecha_limite ? props.tarea.fecha_limite.substring(0, 10) : ''
+      }
     } else {
       form.value = formDefault()
     }
