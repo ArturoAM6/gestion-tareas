@@ -59,12 +59,33 @@ app.post('/register', async (req, res) => {
             return res.status(400).json({ message: "FALTAN_DATOS" });
         }
 
-        if (
-            contrasena.length < MIN_PASSWORD_LENGTH ||
-            contrasena.length > MAX_PASSWORD_LENGTH
-        ) {
+        if (contrasena.length < MIN_PASSWORD_LENGTH) {
             return res.status(400).json({
                 message: "PASSWORD_LONGITUD_INVALIDA"
+            });
+        }
+
+        if (!/[a-z]/.test(contrasena)) {
+            return res.status(400).json({
+                message: "PASSWORD_SIN_MINUSCULA"
+            });
+        }
+
+        if (!/[A-Z]/.test(contrasena)) {
+            return res.status(400).json({
+                message: "PASSWORD_SIN_MAYUSCULA"
+            });
+        }
+
+        if (!/[0-9]/.test(contrasena)) {
+            return res.status(400).json({
+                message: "PASSWORD_SIN_NUMERO"
+            });
+        }
+
+        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(contrasena)) {
+            return res.status(400).json({
+                message: "PASSWORD_SIN_ESPECIAL"
             });
         }
 

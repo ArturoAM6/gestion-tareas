@@ -81,6 +81,7 @@
                 v-model="form.fecha_limite"
                 type="date"
                 required
+                :min="new Date().toISOString().split('T')[0]"
                 class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none transition-all focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/25 [color-scheme:dark]"
               />
             </div>

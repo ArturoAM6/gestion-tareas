@@ -46,10 +46,18 @@
                 type="password"
                 autocomplete="new-password"
                 required
-                placeholder="Entre 8 y 10 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 class="block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none transition-all focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
               />
             </div>
+            <!-- Requisitos de contraseña -->
+            <ul class="mt-3 space-y-1 text-xs text-gray-500">
+              <li>• Mínimo 8 caracteres</li>
+              <li>• Al menos una letra minúscula</li>
+              <li>• Al menos una letra mayúscula</li>
+              <li>• Al menos un número</li>
+              <li>• Al menos un carácter especial (!@#$%^&*...)</li>
+            </ul>
           </div>
 
           <div>
@@ -93,9 +101,12 @@ const confirmPassword = ref('')
 const errorMsg = ref('')
 const successMsg = ref('')
 
+
+
 const handleRegister = async () => {
   errorMsg.value = ''
   successMsg.value = ''
+
 
   if (password.value !== confirmPassword.value) {
     errorMsg.value = 'Las contraseñas no coinciden'
@@ -121,13 +132,16 @@ const handleRegister = async () => {
         window.location.href = '/'
       }, 1500)
     } else {
-      errorMsg.value = data.message === 'USUARIO_YA_EXISTE'
-        ? 'Este usuario ya está registrado'
-        : data.message === 'PASSWORD_LONGITUD_INVALIDA'
-        ? 'La contraseña debe tener entre 8 y 10 caracteres'
-        : data.message === 'FALTAN_DATOS'
-        ? 'Completa todos los campos'
-        : 'Error al registrarse'
+      const mensajes = {
+        USUARIO_YA_EXISTE: 'Este usuario ya está registrado',
+        PASSWORD_LONGITUD_INVALIDA: 'La contraseña debe tener al menos 8 caracteres',
+        PASSWORD_SIN_MINUSCULA: 'La contraseña debe tener al menos una letra minúscula',
+        PASSWORD_SIN_MAYUSCULA: 'La contraseña debe tener al menos una letra mayúscula',
+        PASSWORD_SIN_NUMERO: 'La contraseña debe tener al menos un número',
+        PASSWORD_SIN_ESPECIAL: 'La contraseña debe tener al menos un carácter especial (!@#$%^&*...)',
+        FALTAN_DATOS: 'Completa todos los campos'
+      }
+      errorMsg.value = mensajes[data.message] || 'Error al registrarse'
     }
   } catch (error) {
     console.error('Error de conexión:', error)
