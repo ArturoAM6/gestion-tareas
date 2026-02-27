@@ -1,3 +1,10 @@
+<!--
+  Página de registro de nuevos usuarios.
+  Presenta un formulario con campos de usuario, contraseña y confirmación de contraseña.
+  Incluye validación visual de los requisitos de complejidad de la contraseña.
+  Al enviar, realiza una petición POST al endpoint /register del backend.
+  Si el registro es exitoso, muestra un mensaje de éxito y redirige al login.
+-->
 <template>
   <div class="flex min-h-screen items-center justify-center bg-[#0f0b1e] px-4 py-12">
     <div class="w-full max-w-md space-y-8">
@@ -16,10 +23,11 @@
         </p>
       </div>
 
-      <!-- Formulario -->
+      <!-- Formulario de registro -->
       <div class="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl backdrop-blur-sm">
         <form @submit.prevent="handleRegister" class="space-y-5">
 
+          <!-- Campo de nombre de usuario -->
           <div>
             <label for="user" class="block text-sm font-medium text-gray-300">Usuario</label>
             <div class="mt-2">
@@ -36,6 +44,7 @@
             </div>
           </div>
 
+          <!-- Campo de contraseña con lista de requisitos de complejidad -->
           <div>
             <label for="password" class="block text-sm font-medium text-gray-300">Contraseña</label>
             <div class="mt-2">
@@ -50,7 +59,7 @@
                 class="block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none transition-all focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
               />
             </div>
-            <!-- Requisitos de contraseña -->
+            <!-- Indicaciones visuales de los requisitos de la contraseña -->
             <ul class="mt-3 space-y-1 text-xs text-gray-500">
               <li>• Mínimo 8 caracteres</li>
               <li>• Al menos una letra minúscula</li>
@@ -60,6 +69,7 @@
             </ul>
           </div>
 
+          <!-- Campo de confirmación de contraseña -->
           <div>
             <label for="confirmPassword" class="block text-sm font-medium text-gray-300">Confirmar Contraseña</label>
             <div class="mt-2">
@@ -76,9 +86,11 @@
             </div>
           </div>
 
+          <!-- Mensajes de retroalimentación: error o éxito -->
           <p v-if="errorMsg" class="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400 ring-1 ring-red-500/20">{{ errorMsg }}</p>
           <p v-if="successMsg" class="rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400 ring-1 ring-emerald-500/20">{{ successMsg }}</p>
 
+          <!-- Botón de envío del formulario -->
           <button
             type="submit"
             class="flex w-full justify-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-purple-500/25 transition-all duration-300 hover:from-purple-500 hover:to-indigo-500 hover:shadow-purple-500/40"
@@ -95,25 +107,32 @@
 <script setup>
 import { ref } from 'vue'
 
+// Variables reactivas para los campos del formulario y mensajes de retroalimentación
 const user = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const errorMsg = ref('')
 const successMsg = ref('')
 
-
-
+/**
+ * Maneja el envío del formulario de registro.
+ * Primero valida que las contraseñas coincidan en el cliente, luego envía
+ * las credenciales al backend. Si el registro es exitoso, muestra un mensaje
+ * de éxito y redirige al login después de 1.5 segundos. En caso de error,
+ * traduce los códigos de error del backend a mensajes legibles.
+ */
 const handleRegister = async () => {
   errorMsg.value = ''
   successMsg.value = ''
 
-
+  // Validación del lado del cliente: las contraseñas deben coincidir
   if (password.value !== confirmPassword.value) {
     errorMsg.value = 'Las contraseñas no coinciden'
     return
   }
 
   try {
+    // Obtener la URL de la API desde la configuración de runtime de Nuxt
     const config = useRuntimeConfig()
     const response = await fetch(`${config.public.apiUrl}/register`, {
       method: 'POST',
@@ -127,11 +146,13 @@ const handleRegister = async () => {
     const data = await response.json()
 
     if (response.ok) {
+      // Mostrar mensaje de éxito y redirigir al login tras un breve retraso
       successMsg.value = '¡Cuenta creada! Redirigiendo al login...'
       setTimeout(() => {
         window.location.href = '/'
       }, 1500)
     } else {
+      // Mapeo de códigos de error del backend a mensajes legibles para el usuario
       const mensajes = {
         USUARIO_YA_EXISTE: 'Este usuario ya está registrado',
         PASSWORD_LONGITUD_INVALIDA: 'La contraseña debe tener al menos 8 caracteres',

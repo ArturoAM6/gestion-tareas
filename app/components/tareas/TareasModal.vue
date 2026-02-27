@@ -1,17 +1,26 @@
+<!--
+  Componente TareasModal.
+  Modal reutilizable para crear y editar tareas. Se muestra como un overlay
+  con animación de entrada/salida. Contiene un formulario con campos de título,
+  descripción, estado, prioridad y fecha límite. En modo edición, muestra
+  también un botón para eliminar la tarea. Se comunica con el padre mediante
+  eventos: 'cerrar', 'guardar' y 'eliminar'.
+-->
 <template>
   <Teleport to="body">
     <Transition name="modal">
       <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <!-- Overlay -->
+        <!-- Overlay oscuro con efecto blur, cierra el modal al hacer clic -->
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="$emit('cerrar')"></div>
 
-        <!-- Modal -->
+        <!-- Contenedor del modal -->
         <div class="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#1a1533] p-6 shadow-2xl shadow-purple-500/10">
-          <!-- Header -->
+          <!-- Header del modal: título dinámico según modo creación/edición -->
           <div class="mb-6 flex items-center justify-between">
             <h2 class="text-lg font-bold text-white">
               {{ esEdicion ? 'Editar Tarea' : 'Nueva Tarea' }}
             </h2>
+            <!-- Botón para cerrar el modal -->
             <button
               @click="$emit('cerrar')"
               class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
@@ -22,9 +31,9 @@
             </button>
           </div>
 
-          <!-- Formulario -->
+          <!-- Formulario de tarea -->
           <form @submit.prevent="guardar" class="space-y-4">
-            <!-- Título -->
+            <!-- Campo de título (requerido, máximo 50 caracteres) -->
             <div>
               <label class="mb-1.5 block text-xs font-semibold text-gray-400 uppercase tracking-wider">Título</label>
               <input
@@ -37,7 +46,7 @@
               />
             </div>
 
-            <!-- Descripción -->
+            <!-- Campo de descripción (opcional) -->
             <div>
               <label class="mb-1.5 block text-xs font-semibold text-gray-400 uppercase tracking-wider">Descripción</label>
               <textarea
@@ -48,8 +57,9 @@
               ></textarea>
             </div>
 
-            <!-- Fila: Estado + Prioridad -->
+            <!-- Fila con selectores de Estado y Prioridad lado a lado -->
             <div class="grid grid-cols-2 gap-4">
+              <!-- Selector de estado de la tarea -->
               <div>
                 <label class="mb-1.5 block text-xs font-semibold text-gray-400 uppercase tracking-wider">Estado</label>
                 <select
@@ -61,6 +71,7 @@
                   <option :value="3">Completada</option>
                 </select>
               </div>
+              <!-- Selector de prioridad de la tarea -->
               <div>
                 <label class="mb-1.5 block text-xs font-semibold text-gray-400 uppercase tracking-wider">Prioridad</label>
                 <select
@@ -74,7 +85,7 @@
               </div>
             </div>
 
-            <!-- Fecha Límite -->
+            <!-- Selector de fecha límite (no permite fechas pasadas) -->
             <div>
               <label class="mb-1.5 block text-xs font-semibold text-gray-400 uppercase tracking-wider">Fecha Límite</label>
               <input
@@ -86,9 +97,10 @@
               />
             </div>
 
-            <!-- Acciones -->
+            <!-- Barra de acciones: eliminar (solo en edición), cancelar y guardar/crear -->
             <div class="flex items-center justify-between pt-2">
               <div>
+                <!-- Botón de eliminar, visible solo en modo edición -->
                 <button
                   v-if="esEdicion"
                   type="button"
@@ -102,6 +114,7 @@
                 </button>
               </div>
               <div class="flex gap-3">
+                <!-- Botón cancelar -->
                 <button
                   type="button"
                   @click="$emit('cerrar')"
@@ -109,6 +122,7 @@
                 >
                   Cancelar
                 </button>
+                <!-- Botón de envío: texto dinámico según modo -->
                 <button
                   type="submit"
                   class="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-purple-500/25 transition-all hover:from-purple-500 hover:to-indigo-500 hover:shadow-purple-500/40"
@@ -125,15 +139,24 @@
 </template>
 
 <script setup>
+// Props del componente
 const props = defineProps({
+  /** Controla la visibilidad del modal */
   visible: { type: Boolean, default: false },
+  /** Objeto de la tarea a editar, null si se está creando una nueva */
   tarea: { type: Object, default: null }
 })
 
+// Eventos emitidos al padre
 const emit = defineEmits(['cerrar', 'guardar', 'eliminar'])
 
+/** Indica si el modal está en modo edición (true) o creación (false) */
 const esEdicion = computed(() => !!props.tarea)
 
+/**
+ * Genera los valores por defecto del formulario para una nueva tarea.
+ * @returns {Object} Objeto con los campos iniciales vacíos/por defecto.
+ */
 const formDefault = () => ({
   titulo: '',
   descripcion: '',
@@ -142,26 +165,38 @@ const formDefault = () => ({
   fecha_limite: new Date().toISOString().split('T')[0]
 })
 
+// Estado reactivo del formulario
 const form = ref(formDefault())
 
+/**
+ * Observador que sincroniza el formulario con la prop 'visible'.
+ * Al abrir el modal, carga los datos de la tarea si es edición,
+ * o restablece los valores por defecto si es creación.
+ */
 watch(() => props.visible, (val) => {
   if (val) {
     if (props.tarea) {
+      // Modo edición: cargar datos de la tarea existente
       form.value = {
         ...props.tarea,
         fecha_limite: props.tarea.fecha_limite ? props.tarea.fecha_limite.substring(0, 10) : ''
       }
     } else {
+      // Modo creación: restablecer formulario a valores por defecto
       form.value = formDefault()
     }
   }
 })
 
+/**
+ * Emite el evento 'guardar' con una copia de los datos del formulario.
+ */
 const guardar = () => {
   emit('guardar', { ...form.value })
 }
 </script>
 
+<!-- Estilos con scope para las animaciones de entrada/salida del modal -->
 <style scoped>
 .modal-enter-active,
 .modal-leave-active {

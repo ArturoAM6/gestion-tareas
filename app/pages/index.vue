@@ -1,3 +1,10 @@
+<!--
+  Página de inicio de sesión (Login).
+  Presenta un formulario con campos de usuario y contraseña.
+  Al enviar, realiza una petición POST al endpoint /login del backend.
+  Si la autenticación es exitosa, almacena el token JWT en localStorage
+  y redirige al usuario a la vista de tareas.
+-->
 <template>
   <div class="flex min-h-screen items-center justify-center bg-[#0f0b1e] px-4 py-12">
     <div class="w-full max-w-md space-y-8">
@@ -16,10 +23,11 @@
         </p>
       </div>
 
-      <!-- Formulario -->
+      <!-- Formulario de login -->
       <div class="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl backdrop-blur-sm">
         <form @submit.prevent="handleLogin" class="space-y-5">
 
+          <!-- Campo de usuario -->
           <div>
             <label for="user" class="block text-sm font-medium text-gray-300">Usuario</label>
             <div class="mt-2">
@@ -36,6 +44,7 @@
             </div>
           </div>
 
+          <!-- Campo de contraseña -->
           <div>
             <label for="password" class="block text-sm font-medium text-gray-300">Contraseña</label>
             <div class="mt-2">
@@ -52,8 +61,10 @@
             </div>
           </div>
 
+          <!-- Mensaje de error visible solo cuando hay un fallo de autenticación -->
           <p v-if="errorMsg" class="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400 ring-1 ring-red-500/20">{{ errorMsg }}</p>
 
+          <!-- Botón de envío del formulario -->
           <button
             type="submit"
             class="flex w-full justify-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-purple-500/25 transition-all duration-300 hover:from-purple-500 hover:to-indigo-500 hover:shadow-purple-500/40"
@@ -70,13 +81,21 @@
 <script setup>
 import { ref } from 'vue'
 
+// Variables reactivas para los campos del formulario y mensajes de error
 const user = ref('')
 const password = ref('')
 const errorMsg = ref('')
 
+/**
+ * Maneja el envío del formulario de inicio de sesión.
+ * Envía las credenciales al backend y, si son válidas,
+ * almacena el token JWT en localStorage y redirige a /tareas.
+ * En caso de error, muestra un mensaje descriptivo al usuario.
+ */
 const handleLogin = async () => {
   errorMsg.value = ''
   try {
+    // Obtener la URL de la API desde la configuración de runtime de Nuxt
     const config = useRuntimeConfig()
     const response = await fetch(`${config.public.apiUrl}/login`, {
       method: 'POST',
@@ -90,9 +109,11 @@ const handleLogin = async () => {
     const data = await response.json()
 
     if (response.ok) {
+      // Almacenar el token JWT y redirigir a la vista de tareas
       localStorage.setItem('token', data.token)
       window.location.href = '/tareas'
     } else {
+      // Mapear códigos de error del backend a mensajes legibles para el usuario
       errorMsg.value = data.message === 'USUARIO_NO_ENCONTRADO'
         ? 'Usuario no encontrado'
         : data.message === 'PASSWORD_INCORRECTA'
