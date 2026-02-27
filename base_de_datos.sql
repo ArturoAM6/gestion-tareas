@@ -1,7 +1,3 @@
-create database if not exists gestor;
-
-use gestor;
-
 -- Tabla para almacenar los usuarios del sistema --
 create table usuarios (
     id int auto_increment primary key,

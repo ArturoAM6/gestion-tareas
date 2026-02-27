@@ -6,8 +6,8 @@ services:
     env_file:
       - .env
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MARIADB_DATABASE}
     ports:
       - "${DB_PORT_EXTERNAL}:${DB_PORT}"
     volumes:
@@ -32,6 +32,9 @@ services:
     environment:
       HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${MARIADB_DATABASE}
     depends_on:
       db:
         condition: service_healthy
